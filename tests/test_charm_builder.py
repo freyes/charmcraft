@@ -589,6 +589,9 @@ def test_build_dependencies_virtualenv_simple(tmp_path, assert_output):
     reqs_file = tmp_path / "reqs.txt"
     reqs_file.touch()
 
+    constraints_file = tmp_path / "constraints.txt"
+    constraints_file.touch()
+
     builder = CharmBuilder(
         builddir=tmp_path,
         installdir=build_dir,
@@ -596,6 +599,7 @@ def test_build_dependencies_virtualenv_simple(tmp_path, assert_output):
         binary_python_packages=[],
         python_packages=[],
         requirements=[reqs_file],
+        constraints=[constraints_file],
     )
 
     with patch("charmcraft.charm_builder.get_pip_version") as mock_pip_version:
@@ -608,7 +612,9 @@ def test_build_dependencies_virtualenv_simple(tmp_path, assert_output):
 
     assert mock.mock_calls == [
         call(["python3", "-m", "venv", str(tmp_path / const.STAGING_VENV_DIRNAME)]),
-        call([pip_cmd, "install", f"--requirement={reqs_file}"]),
+        call(
+            [pip_cmd, "install", f"--requirement={reqs_file}", f"--constraint={constraints_file}"]
+        ),
     ]
 
     site_packages_dir = charm_builder._find_venv_site_packages(
@@ -628,6 +634,11 @@ def test_build_dependencies_virtualenv_multiple(tmp_path, assert_output):
     reqs_file_2 = tmp_path / "reqs.txt"
     reqs_file_1.touch()
 
+    constraints_file_1 = tmp_path / "constraints1.txt"
+    constraints_file_1.touch()
+    constraints_file_2 = tmp_path / "constraints2.txt"
+    constraints_file_1.touch()
+
     builder = CharmBuilder(
         builddir=tmp_path,
         installdir=build_dir,
@@ -635,6 +646,7 @@ def test_build_dependencies_virtualenv_multiple(tmp_path, assert_output):
         binary_python_packages=[],
         python_packages=[],
         requirements=[reqs_file_1, reqs_file_2],
+        constraints=[constraints_file_1, constraints_file_2],
     )
 
     with patch("charmcraft.charm_builder.get_pip_version") as mock_pip_version:
@@ -652,6 +664,8 @@ def test_build_dependencies_virtualenv_multiple(tmp_path, assert_output):
                 "install",
                 f"--requirement={reqs_file_1}",
                 f"--requirement={reqs_file_2}",
+                f"--constraint={constraints_file_1}",
+                f"--constraint={constraints_file_2}",
             ]
         ),
     ]

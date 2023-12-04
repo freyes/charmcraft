@@ -88,6 +88,7 @@ def get_pip_command(
     prefix: Iterable[str],
     requirements_files: Collection[pathlib.Path],
     *,
+    constraints_files: Collection[pathlib.Path] = (),
     source_deps: Collection[str] = (),
     binary_deps: Collection[str] = (),
 ) -> list[str]:
@@ -95,6 +96,7 @@ def get_pip_command(
 
     :param prefix: The pip command and any earlier arguments.
     :param requirements_files: Paths to the requirements files to include.
+    :param constraints_files: Paths to the constraints files to use.
     :param source_deps: Additional dependencies that can only be installed from source.
     :param binary_deps: Dependencies (including from requirements files) allowed for binary install.
     :returns: A full pip command line
@@ -123,6 +125,7 @@ def get_pip_command(
         *prefix,
         *no_binary,
         *(f"--requirement={path}" for path in requirements_files),
+        *(f"--constraint={path}" for path in constraints_files),
         *non_requirements_packages,
     ]
 

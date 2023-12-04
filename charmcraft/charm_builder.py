@@ -62,6 +62,7 @@ class CharmBuilder:
         binary_python_packages: list[str] = None,
         python_packages: list[str] = None,
         requirements: list[pathlib.Path] = None,
+        constraints: list[pathlib.Path] = None,
         strict_dependencies: bool = False,
     ) -> None:
         self.builddir = builddir
@@ -71,6 +72,7 @@ class CharmBuilder:
         self.binary_python_packages = binary_python_packages
         self.python_packages = python_packages
         self.requirement_paths = requirements
+        self.constraint_paths = constraints or []
         self.strict_dependencies = strict_dependencies
         self.ignore_rules = self._load_juju_ignore()
         self.ignore_rules.extend_patterns([f"/{const.STAGING_VENV_DIRNAME}"])
@@ -218,6 +220,9 @@ class CharmBuilder:
         all_deps = []
         for req_file in self.requirement_paths:
             all_deps.append(req_file.read_text())
+        if self.constraint_paths:
+            for constraint_file in self.constraint_paths:
+                all_deps.append(constraint_file.read_text())
         all_deps.extend(self.binary_python_packages)
         all_deps.extend(self.python_packages)
         all_deps.extend(self.charmlib_deps)
@@ -251,6 +256,7 @@ class CharmBuilder:
                     get_pip_command(
                         [pip_cmd, "install"],
                         self.requirement_paths,
+                        constraints_files=self.constraint_paths,
                         source_deps=[*self.python_packages, *self.charmlib_deps],
                         binary_deps=self.binary_python_packages,
                     )
@@ -276,6 +282,11 @@ class CharmBuilder:
                     cmd = [pip_cmd, "install", "--upgrade", "--no-binary", ":all:"]  # base command
                     for reqspath in self.requirement_paths:
                         cmd.append(f"--requirement={reqspath}")  # the dependencies file(s)
+                    if self.constraint_paths:
+                        for constraint_path in self.constraint_paths:
+                            cmd.append(
+                                f"--constraint={constraint_path}"
+                            )  # the constraints file(s)
                     _process_run(cmd)
                 if self.charmlib_deps:
                     # install charmlibs python dependencies
